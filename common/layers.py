@@ -1,5 +1,5 @@
 import numpy as np
-import common.functions import softmax, cross_entropy_error
+from common.functions import softmax, cross_entropy_error
 
 # 各レイヤはメソッドとしてforward(), backward()を持つ。
 # 各レイヤはインスタンス変数としてparams, gradsを持つ。
@@ -10,7 +10,7 @@ import common.functions import softmax, cross_entropy_error
 class Sigmoid:
     def __init__(self):
         # sigmoidに学習可能なパラメータは存在しないので空のリストで初期化。
-        self.params = [],self.grads=[]
+        self.params, self.grads = [], []
         self.out = None
 
     def forward(self, x):
@@ -27,13 +27,13 @@ class Sigmoid:
 
 
 class Affine:
-    """テンソル対応。書籍のは二次元配列前提となっている。
-    """
+    """テンソル対応。書籍のは二次元配列前提となっている。"""
+
     def __init__(self, W, b):
         self.params = [W, b]
         self.grads = [np.zeros_like(W), np.zeros_like(b)]
         self.x = None
-        
+
         self.original_x_shape = None
 
     def forward(self, x):
@@ -60,7 +60,7 @@ class Affine:
 
         Affineの内部計算の都合で2次元に変形するが、外から見た入出力の形は壊してはいけないので元に戻す
         """
-        W,b=self.params
+        W, b = self.params
 
         dx = np.dot(dout, W.T)
         dW = np.dot(self.x.T, dout)
@@ -69,9 +69,9 @@ class Affine:
         # 元のデータ形状に戻す。これは単に偏微分の並べ方を変えているだけなので問題ない（見かけを変えているだけ）
         # shapeはタプルになっているのでアンパックして引数として渡しているだけ
         dx = dx.reshape(*self.original_x_shape)
-        
-        self.grads[0][...]=dW
-        self.grads[1][...]=db
+
+        self.grads[0][...] = dW
+        self.grads[1][...] = db
 
         # backwardの処理が単純なfor文でいいようにdWやdbは保持するだけで出力はしない。（下流に伝える必要があるものだけにする）
         # 各レイヤーを一つの演算のように扱っているので、基本的に下流に伝える偏微分は一つだけで済む。
@@ -85,14 +85,14 @@ class SoftmaxWithLoss:
 
     def __init__(self):
         # 学習可能なパラはないので空
-        self.params,self.grads=[],[]
+        self.params, self.grads = [], []
         self.loss = None
         # 下記二つはbackwardの計算時に必要
         self.y = None
         self.t = None
 
     def forward(self, x, t):
-        
+
         # サンプルコードではデータの形状を変換しているが、common.functionsの関数側で対応しているので不要なはず？
         self.t = t
         self.y = softmax(x)
@@ -115,22 +115,23 @@ class SoftmaxWithLoss:
             dx = dx / batch_size
         return dx
 
+
 class MatMul:
-    def __init__(self,W):
-        self.params=[W]
-        self.grads=[np.zeros_like(W)]
-        self.x=None
-        
-    def forward(self,x):
-        W,=self.params
-        out=np.dot(x,W)
-        self.x=x
+    def __init__(self, W):
+        self.params = [W]
+        self.grads = [np.zeros_like(W)]
+        self.x = None
+
+    def forward(self, x):
+        (W,) = self.params
+        out = np.dot(x, W)
+        self.x = x
         return out
-    
-    def backward(self,dout):
-        W,= self.params
-        dx=np.dot(dout,W.T)
-        dW=np.dot(self.x.T,dout)
+
+    def backward(self, dout):
+        (W,) = self.params
+        dx = np.dot(dout, W.T)
+        dW = np.dot(self.x.T, dout)
         # 普通にgrads[0]=dWだとdWが参照しているオブジェクトをgrads[0]も参照するようになる
-        self.grads[0][...]=dW
+        self.grads[0][...] = dW
         return dx
