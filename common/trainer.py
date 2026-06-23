@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 sys.path.append(os.pardir)
 from dataset import spiral
 from common.optimizer import SGD
-from common.utill import clip_grads
+from common.utill import clip_grads, output_plot
 
 
 class Trainer:
@@ -48,12 +48,12 @@ class Trainer:
                 loss = model.forward(batch_x, batch_t)
                 # 下記によりgradsが更新される。
                 model.backward()
-                # 共有された重みを一つに集約（？）
+                # 共有された重みを一つに集約している。重みを共有している場合などにmodel.paramsに重複して入っていることがあるため
                 params, grads = remove_duplicate(model.params, model.grads)
                 if max_grad is not None:
                     clip_grads(grads, max_grad)
 
-                # modelクラスのインスタンス変数じゃなくて上記で定義した変数を使用している（？）
+                # modelクラスのインスタンス変数ではなく、上記で定義した重複除去後の変数を使用している
                 optimizer.update(params, grads)
                 total_loss += loss
                 loss_count += 1
@@ -76,15 +76,19 @@ class Trainer:
 
             self.current_epoch += 1
 
-    # 以下コピペ
-    def plot(self, ylim=None):
+    # 以下コピペ（引数は追加）
+    def plot(self, file_name=None, ylim=None):
         x = numpy.arange(len(self.loss_list))
         if ylim is not None:
             plt.ylim(*ylim)
         plt.plot(x, self.loss_list, label="train")
         plt.xlabel("iterations (x" + str(self.eval_interval) + ")")
         plt.ylabel("loss")
-        plt.show()
+        # 以下書き直した
+        if file_name is None:
+            plt.show()
+        else:
+            output_plot(filename=file_name)
 
 
 # TODO 下記はコピペ
