@@ -26,6 +26,29 @@ class Sigmoid:
         return dx
 
 
+# TODO 下記はコピペ
+class SigmoidWithLoss:
+    def __init__(self):
+        self.params, self.grads = [], []
+        self.loss = None
+        self.y = None  # sigmoidの出力
+        self.t = None  # 教師データ
+
+    def forward(self, x, t):
+        self.t = t
+        self.y = 1 / (1 + np.exp(-x))
+
+        self.loss = cross_entropy_error(np.c_[1 - self.y, self.y], self.t)
+
+        return self.loss
+
+    def backward(self, dout=1):
+        batch_size = self.t.shape[0]
+
+        dx = (self.y - self.t) * dout / batch_size
+        return dx
+
+
 class Affine:
     """テンソル対応。書籍のは二次元配列前提となっている。"""
 
@@ -135,3 +158,38 @@ class MatMul:
         # 普通にgrads[0]=dWだとdWが参照しているオブジェクトをgrads[0]も参照するようになる
         self.grads[0][...] = dW
         return dx
+
+
+class Embedding:
+    def __init__(self, W):
+        self.params = [W]
+        self.grads = [np.zeros_like(W)]
+        self.idx = None
+
+    def forward(self, idx):
+        """_summary_
+
+        Args:
+            idx (_type_): 単語IDの配列（ミニバッチ処理を想定）
+
+        Returns:
+            _type_: _description_
+        """
+        # アンパックを行っている。Embeddingレイヤのparamsリストは要素が一つしかないのでW = self.params[0]とほぼ同じ意味。
+        (W,) = self.params
+        # backwardで使用するためにidxは保持しておく
+        self.idx = idx
+        out = W[idx]
+        return out
+
+    def backward(self, dout):
+        (dW,) = self.grads
+        dW[...] = 0
+
+        for i, word_id in enumerate(self.idx):
+            # iは単純にdhの行を位置的に上から順に指定しているイメージ
+            dW[word_id] += dout[i]
+        # 上記for文と同じ処理
+        # np.add.at(dW,self.idx,dout)
+
+        return None
