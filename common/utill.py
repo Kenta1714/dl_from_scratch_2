@@ -189,3 +189,77 @@ def clip_grads(grads, max_norm):
     if rate < 1:
         for grad in grads:
             grad *= rate
+
+
+def to_cpu(x):
+    import numpy
+
+    # すでにnumpy配列ならそのまま
+    if type(x) == numpy.ndarray:
+        return x
+    return np.asnumpy(x)
+
+
+def analogy(a, b, c, word_to_id, id_to_word, word_matrix, top=5, answer=None):
+    """_summary_
+
+    Args:
+        a (_type_): _description_
+        b (_type_): _description_
+        c (_type_): _description_
+        word_to_id (_type_): _description_
+        id_to_word (_type_): _description_
+        word_matrix (_type_): word_vecs行列
+        top (int, optional): _description_. Defaults to 5.
+        answer (_type_, optional): _description_. Defaults to None.
+    """
+    # 辞書に登録されていなかった場合は何もせずに返す
+    for word in (a, b, c):
+        if word not in word_to_id:
+            print(f"{word} is not found")
+            return
+    # 例えばking:man=queen:?のイメージ。この場合a-c(king-queen)とb-?(man-?)が近ければ良い。つまり?=b-a+c
+    print(f"\n[analogy] {a} : {b} = {c} : ?")
+    a_vec, b_vec, c_vec = (
+        word_matrix[word_to_id[a]],
+        word_matrix[word_to_id[b]],
+        word_matrix[word_to_id[c]],
+    )
+
+    query_vec = b_vec - a_vec + c_vec
+    # 理想的にはコサイン類似度になるように埋め込みベクトル側も正規化した方がいいがqueryのみ正規化している？
+    query_vec = normalize(query_vec)
+
+    similarity = np.dot(word_matrix, query_vec)
+
+    # 答えを知っている場合、答えのベクトルとqueryの内積（類似度）を返す
+    if answer is not None:
+        print(f"==>{answer}:{np.dot(word_matrix[word_to_id[answer]],query_vec)}")
+
+    count = 0
+    # 昇順ソートしてtop分表示
+    for i in (-1 * similarity).argsort():
+        # 0ベクトルなどは正規化した際にnanになりうる
+        if np.isnan(similarity[i]):
+            continue
+        # 入力単語そのものは除外する
+        if id_to_word[i] in (a, b, c):
+            continue
+        print(f"{id_to_word[i]}: {similarity[i]}")
+
+        count += 1
+        if count >= top:
+            return
+
+
+def normalize(x):
+    if x.ndim == 2:
+        # 一本の列ベクトルに潰すことで行ごとのベクトルのノルムを計算
+        s = np.sqrt((x * x).sum(1))
+        # 行ごとにノルムで割る
+        x /= s.reshape((s.shape[0], 1))
+    elif x.ndim == 1:
+        # 単純にベクトルをノルムで割る
+        s = np.sqrt((x * x).sum())
+        x /= s
+    return x

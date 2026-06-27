@@ -5,11 +5,12 @@ import collections
 
 sys.path.append(os.pardir)
 from common.layers import Embedding, SigmoidWithLoss
+from common.config import GPU
 
 
 class EmbeddingDot:
-    """forwardでは、文脈ベクトルhと正例indexのリストを受け取り、正解の単語に対応するベクトルを抜き出してhとの内積を計算して出力する。
-    """
+    """forwardでは、文脈ベクトルhと正例indexのリストを受け取り、正解の単語に対応するベクトルを抜き出してhとの内積を計算して出力する。"""
+
     def __init__(self, W):
         # W_outのEmbeddingレイヤを持つ。
         self.embed = Embedding(W)
@@ -99,7 +100,7 @@ class NegativeSamplingLoss:
         self.sampler = UnigramSampler(corpus, power, sample_size)
         # 負例サンプリング数+正解一つ分のsigmoidとembed dotを作成する。（ここでは正解が[0]としているらしい）
         self.loss_layers = [SigmoidWithLoss() for _ in range(sample_size + 1)]
-        self.embed_dot_layers = [EmbeddingDot()W for _ in range(sample_size + 1)]
+        self.embed_dot_layers = [EmbeddingDot(W) for _ in range(sample_size + 1)]
 
         self.params, self.grads = [], []
         # sigmoidは学習可能なパラを持たないのでここに入れない。
@@ -117,7 +118,7 @@ class NegativeSamplingLoss:
 
         バッチ2:
         正例 + 負例1 + 負例2 + ...
-        
+
         だが、実装上は下記のようになっている。なお、それぞれのloss計算でsigmoidwithloss中のcross_entropy_errorでバッチサイズ
         で割られているので、分配法則的に全部のlossを合計してからバッチサイズで割っている（つまりバッチ方向に平均）のと等価
         全バッチについて正例の loss を計算
@@ -150,19 +151,19 @@ class NegativeSamplingLoss:
             # 全バッチのi番目を取り出してlossを計算している
             negative_target = negative_sample[:, i]
             score = self.embed_dot_layers[1 + i].forward(h, negative_target)
-            
+
             # 正例の分のlossに負例の分のlossも足し合わせる
             loss += self.loss_layers[1 + i].forward(score, negative_label)
 
         return loss
-    
-    def backward(self,dout=1):
-        dh=0
-        for l0,l1 in zip(self.loss_layers,self.embed_dot_layers):
+
+    def backward(self, dout=1):
+        dh = 0
+        for l0, l1 in zip(self.loss_layers, self.embed_dot_layers):
             # SigmoidWithLossのbackward
-            dscore=l0.backward(dout)
-            
+            dscore = l0.backward(dout)
+
             # EmbeddingDotのbackward
             # dhは、正解+負例サンプリングの1セットごとに勾配を加算してセット数分（バッチサイズ分）のリストにしたやつのイメージ
-            dh+=l1.backward(dscore)
+            dh += l1.backward(dscore)
         return dh

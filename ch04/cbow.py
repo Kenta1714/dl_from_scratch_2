@@ -1,7 +1,6 @@
 import sys
 import os
 import numpy as np
-import collections
 
 sys.path.append(os.pardir)
 from common.layers import Embedding
