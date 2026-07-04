@@ -1,6 +1,14 @@
 import numpy as np
 
 
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def relu(x):
+    return np.maximum(0, x)
+
+
 def softmax(x):
     """
     通常softmax関数は各行ごとに正規化したいので、このような実装にする

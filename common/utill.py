@@ -102,13 +102,13 @@ def create_co_matrix(corpus, vocab_size, window_size=1):
             left_idx = idx - i
             right_idx = idx + i
 
-        if left_idx >= 0:
-            left_word_id = corpus[left_idx]
-            co_matrix[word_id, left_word_id] += 1
+            if left_idx >= 0:
+                left_word_id = corpus[left_idx]
+                co_matrix[word_id, left_word_id] += 1
 
-        if right_idx < corpus_size:
-            right_word_id = corpus[right_idx]
-            co_matrix[word_id, right_word_id] += 1
+            if right_idx < corpus_size:
+                right_word_id = corpus[right_idx]
+                co_matrix[word_id, right_word_id] += 1
 
     return co_matrix
 
@@ -133,7 +133,7 @@ def ppmi(C, verbose=False, eps=1e-8):
             if verbose:
                 cnt += 1
                 if cnt % (total // 100 + 1) == 0:
-                    print(f"{100*cnt/total:.1f} done")
+                    print(f"{100*cnt/total:.1f}% done")
 
     return M
 

@@ -28,4 +28,4 @@ for word, word_id in word_to_id.items():
     plt.annotate(word, (U[word_id, 0], U[word_id, 1]))
 # Uの２列目までを見ることで、各単語を2次元ベクトルとして表せる。
 plt.scatter(U[:, 0], U[:, 1], alpha=0.5)
-output_plot(filename="単語ベクトルのSVDによる圧縮結果")
+output_plot(filename="単語ベクトルのSVDによる圧縮結果_")

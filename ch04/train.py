@@ -1,6 +1,7 @@
 import sys
 import os
 import pickle
+from datetime import datetime
 import numpy as np
 
 sys.path.append(os.pardir)
@@ -44,6 +45,8 @@ params = {}
 params["word_vecs"] = word_vecs.astype(np.float16)
 params["word_to_id"] = word_to_id
 params["id_to_word"] = id_to_word
-pkl_file = "cbow_params.pkl"
+
+now = datetime.now()
+pkl_file = now.strftime("cbow_params_%Y%m%d_%H%M%S.pkl")
 with open(pkl_file, "wb") as f:
     pickle.dump(params, f, -1)
